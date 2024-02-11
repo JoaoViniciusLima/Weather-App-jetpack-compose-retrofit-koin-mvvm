@@ -1,25 +1,59 @@
 package com.example.temperature.models
 
-data class WeatherData (
-    var temperature: Double? = null,
-    var sunset: Long? = null,
-    var sunrise: Long? = null,
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import kotlin.math.roundToInt
+data class WeatherData(
+    var temperature: String? = null,
+    var sunset: String? = null,
+    var sunrise: String? = null,
     var humidity: String? = null,
     var pressure: String? = null,
     var wind: String? = null,
     var description: String? = null
 
 ){
-    fun setData(weatherResponse: WeatherResponse): WeatherData {
-        temperature = weatherResponse.main.temp
-        sunset = weatherResponse.sys.sunset
-        sunrise = weatherResponse.sys.sunrise
-        humidity = weatherResponse.main.humidity
-        pressure = weatherResponse.main.pressure
-        wind = weatherResponse.wind.speed
-        description = weatherResponse.weather[0].description
-
-        return this
-
+    fun hasNullAttributes(): Boolean {
+        return temperature == null ||
+                sunset == null ||
+                sunrise == null ||
+                humidity == null ||
+                pressure == null ||
+                wind == null ||
+                description == null
     }
+
+    constructor(weatherResponse: WeatherResponse) :
+            this(
+                weatherResponse.main.temp?.let{
+                weatherResponse.main.temp.roundToInt().toString()
+                },
+                weatherResponse.sys.sunset?.let{
+                    timestampToTime(weatherResponse.sys.sunset)
+                },
+                weatherResponse.sys.sunrise?.let{
+                    timestampToTime(weatherResponse.sys.sunrise!!)
+                },
+                weatherResponse.main.humidity?.let{
+                weatherResponse.main.humidity
+                },
+                weatherResponse.main.pressure?.let{
+                weatherResponse.main.pressure
+                },
+                weatherResponse.wind.speed?.let{
+                weatherResponse.wind.speed
+                },
+                weatherResponse.weather[0].description?.let{
+                    weatherResponse.weather[0].description
+                })
+
+}
+
+fun timestampToTime(weatherData: Long): String? {
+    val dateFormat = SimpleDateFormat("hh:mm a", Locale.ENGLISH)
+    dateFormat.timeZone = TimeZone.getTimeZone("GMT-3")
+
+    return dateFormat.format(weatherData!! * 1000)
 }

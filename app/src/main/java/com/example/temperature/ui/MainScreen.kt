@@ -37,13 +37,11 @@ import com.example.temperature.R
 import com.example.temperature.models.WeatherData
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import kotlin.math.roundToInt
 
 @Composable
-fun DataCard(weatherCard: WeatherCard) {
+fun WeatherCard(weatherCard: WeatherCard) {
     Card (modifier = Modifier
         .width(120.dp)
         .height(120.dp)
@@ -56,7 +54,7 @@ fun DataCard(weatherCard: WeatherCard) {
                 .size(25.dp),colorFilter = ColorFilter.tint(Color.White)
             )
             Text(text = weatherCard.name, color = Color.White, fontSize = 14.sp)
-            Text(text = weatherCard.data, color = Color.White, fontSize = 14.sp)
+            weatherCard.data?.let { Text(text = it, color = Color.White, fontSize = 14.sp) }
         }
 
     }
@@ -64,14 +62,14 @@ fun DataCard(weatherCard: WeatherCard) {
 }
 
 
-fun dataWeatheritens(weatherData: WeatherData?): List<WeatherCard> {
+fun weatherCardItems(weatherData: WeatherData?): List<WeatherCard> {
     val dateFormat = SimpleDateFormat("hh:mm a", Locale.ENGLISH)
     dateFormat.timeZone = TimeZone.getTimeZone("GMT-3")
     val dataWeatheritens = listOf<WeatherCard>(
         WeatherCard(
             image = R.drawable.sunrise,
             name = "nascer do sol",
-            data = dateFormat.format(Date(weatherData?.sunrise!! * 1000))
+            data = weatherData?.sunrise
 
         ),
         WeatherCard(
@@ -83,19 +81,18 @@ fun dataWeatheritens(weatherData: WeatherData?): List<WeatherCard> {
         WeatherCard(
             image = R.drawable.sunset,
             name = "por do sol",
-            data = dateFormat.format(Date(weatherData?.sunset!! * 1000))
+            data = weatherData?.sunset
 
         ),
         WeatherCard(
             image = R.drawable.pressure,
             name = "pressão",
-            data = weatherData?.pressure.toString()
-
+            data = weatherData?.pressure
         ),
         WeatherCard(
             image = R.drawable.humidity,
             name = "humidade",
-            data = weatherData?.humidity.toString() + "%"
+            data = weatherData?.humidity + "%"
 
         )
     )
@@ -104,7 +101,7 @@ fun dataWeatheritens(weatherData: WeatherData?): List<WeatherCard> {
 }
 
 
-fun getImageUrl(weatherCondicion: String?): String {
+fun getConditionImageUrl(weatherCondition: String?): String {
 
     val timeZone = TimeZone.getTimeZone("GMT-3")
 
@@ -116,14 +113,14 @@ fun getImageUrl(weatherCondicion: String?): String {
         "night" to "n",
         "day" to "d"
     )
-    val periodCode = if (hourOfDay >= 18 || hourOfDay < 6 ){
+    val periodCode = if (hourOfDay >= 18 || hourOfDay < 6) {
         periodCodes["night"]
     } else {
         periodCodes["day"]
     }
 
     val weatherConditionsCodes = mapOf(
-        "ceu limpo" to "01",
+        "céu limpo" to "01",
         "algumas nuvens" to "02",
         "nuvens dispersas" to "03",
         "nublado" to "04",
@@ -133,10 +130,9 @@ fun getImageUrl(weatherCondicion: String?): String {
         "neve" to "13",
         "misto" to "50"
     )
-    val weatherConditionCode = weatherConditionsCodes[weatherCondicion]
-    val urlImage = "https://openweathermap.org/img/wn/$weatherConditionCode$periodCode@2x.png"
+    val weatherConditionCode = weatherConditionsCodes[weatherCondition]
 
-    return urlImage
+    return "https://openweathermap.org/img/wn/$weatherConditionCode$periodCode@2x.png"
 
 }
 
@@ -148,97 +144,112 @@ fun MainScreen(viewModel: MainViewModel) {
     val cityName by viewModel.cityName.observeAsState()
     val estateName by viewModel.estateName.observeAsState()
 
-    ConstraintLayout (modifier = Modifier
-        .fillMaxSize()
-        .background(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(android.graphics.Color.parseColor("#122259")),
-                    Color(
-                        android.graphics.Color.parseColor("#9561a1")
+    ConstraintLayout(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(android.graphics.Color.parseColor("#122259")),
+                        Color(
+                            android.graphics.Color.parseColor("#9561a1")
+                        )
                     )
                 )
             )
-        )
-        .padding(20.dp),
-    ){
-        val(location, weatherImage, centerColumn, bottomGrid, progressiveBar) = createRefs()
+            .padding(20.dp),
+    ) {
+        val (location, weatherImage, centerColumn, bottomGrid, progressiveBar) = createRefs()
 
-        if(networkState == "success"){
-            Text(text = "$cityName, $estateName", color = Color.White, fontSize = 21.sp, modifier = Modifier
-                .constrainAs(location) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
+        when (networkState) {
+            "success" -> {
+                Text(text = "$cityName, $estateName",
+                    color = Color.White,
+                    fontSize = 21.sp,
+                    modifier = Modifier
+                        .constrainAs(location) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        })
 
+                AsyncImage(
+                    model = getConditionImageUrl(weatherData?.description),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .constrainAs(weatherImage) {
+                            bottom.linkTo(centerColumn.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            top.linkTo(location.bottom)
+                        }
+                        .size(280.dp)
+                )
 
-                } )
+                Column(
+                    modifier = Modifier
+                        .constrainAs(centerColumn) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
 
-            AsyncImage(
-                model = getImageUrl(weatherData?.description),
-                contentDescription = null,
-                modifier = Modifier
-                    .constrainAs(weatherImage) {
-                        bottom.linkTo(centerColumn.top)
+                        }, horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(text = weatherData?.description!!.replaceFirstChar { it.uppercase() },
+                        color = Color.White,
+                        fontSize = 25.sp)
+                    Text(
+                        text = weatherData?.temperature + "°C",
+                        color = Color.White,
+                        fontSize = 90.sp
+                    )
+
+                }
+
+                LazyVerticalGrid(modifier = Modifier
+                    .constrainAs(bottomGrid) {
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
-                        top.linkTo(location.bottom)
+                        bottom.linkTo(parent.bottom)
+
+                    }, contentPadding = PaddingValues(0.dp), columns = GridCells.Fixed(3)
+                ) {
+                    itemsIndexed(weatherCardItems(weatherData)) { _, dataCardItem ->
+                        WeatherCard(dataCardItem)
                     }
-                    .size(250.dp)
 
-            )
+                }
 
-
-            Column(modifier = Modifier
-                .constrainAs(centerColumn) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    bottom.linkTo(parent.bottom)
-
-                }, horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Text(text = weatherData?.description?.replaceFirstChar { it.uppercase() }.toString()
-                , color = Color.White, fontSize = 18.sp)
-            Text(text = weatherData?.temperature?.roundToInt().toString() + "°C", color = Color.White, fontSize = 90.sp)
-
-        }
-
-        LazyVerticalGrid(modifier = Modifier
-            .constrainAs(bottomGrid) {
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-                bottom.linkTo(parent.bottom)
-
-            },contentPadding = PaddingValues(0.dp) ,columns = GridCells.Fixed(3)){
-            itemsIndexed(dataWeatheritens(weatherData)){
-                    _, dataCardItem -> DataCard(dataCardItem)
             }
 
+            "error" -> {
+                Text(
+                    text = "Erro de conexão!",
+                    modifier = Modifier.constrainAs(progressiveBar) {
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                        top.linkTo(parent.top)
+
+                    }, fontSize = 30.sp, color = Color.White
+                )
+
+            }
+
+            else -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.constrainAs(progressiveBar) {
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                        top.linkTo(parent.top)
+
+                    }, color = Color.White
+                )
+
+            }
         }
-
-        }else if(networkState == "error"){
-            Text(text = "Erro de conexão!",
-                modifier = Modifier.constrainAs(progressiveBar) {
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-                bottom.linkTo(parent.bottom)
-                top.linkTo(parent.top)
-
-            },fontSize = 30.sp,color = Color.White
-            )
-
-        }else{
-            CircularProgressIndicator(modifier = Modifier.constrainAs(progressiveBar) {
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-                bottom.linkTo(parent.bottom)
-                top.linkTo(parent.top)
-
-            }, color = Color.White
-            )
-
-        }
-}
+    }
 }

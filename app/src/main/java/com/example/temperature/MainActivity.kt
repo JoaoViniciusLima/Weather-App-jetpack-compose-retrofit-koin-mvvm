@@ -1,33 +1,33 @@
 package com.example.temperature
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.example.temperature.repositores.MainRepository
-import com.example.temperature.viewModel.MainViewModelFactory
 import com.example.temperature.api.RetrofitService
+import com.example.temperature.repositores.MainRepository
+import com.example.temperature.ui.MainScreen
 import com.example.temperature.viewModel.MainViewModel
-import android.Manifest
-import android.content.pm.PackageManager
-import android.location.Geocoder
+import com.example.temperature.viewModel.MainViewModelFactory
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import java.util.Locale
-import android.os.Handler
-import android.os.Looper
-import com.example.temperature.ui.MainScreen
-import android.widget.Toast
 
 class MainActivity : ComponentActivity() {
 
     private val REQUEST_CODE_LOCATION_PERMISSION = 100
     private lateinit var viewModel: MainViewModel
     private val handler = Handler(Looper.getMainLooper())
-    private val delay = 300 * 1000
-
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private fun requestLocationPermission() {
         ActivityCompat.requestPermissions(
             this,
@@ -38,8 +38,6 @@ class MainActivity : ComponentActivity() {
             REQUEST_CODE_LOCATION_PERMISSION
         )
     }
-
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
 
     private fun getLastLocation() {
@@ -70,15 +68,13 @@ class MainActivity : ComponentActivity() {
                         "Erro ao acessar localisação",
                         Toast.LENGTH_SHORT
                     ).show()
-
                 }
-
         }
-
     }
 
-
-    private fun startHandler(cityName: String) {
+    private fun startHandler(cityName:String) {
+        val delay = 300 * 1000
+        viewModel.getWeatherData(cityName)
         handler.postDelayed(object : Runnable {
             override fun run() {
                 viewModel.getWeatherData(cityName)
@@ -98,7 +94,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var isHandlerStarted = false
 
         val retrofitService = RetrofitService.getInstance()
         viewModel = ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService))).get(
@@ -106,18 +101,22 @@ class MainActivity : ComponentActivity() {
         )
 
         viewModel.cityName.observe(this, Observer { cityName ->
-            viewModel.getWeatherData(cityName)
-            if (!isHandlerStarted) {
-                startHandler(cityName)
-                isHandlerStarted = true
-            }
+            startHandler(cityName)
+
         })
 
-        getLastLocation()
-
         setContent { MainScreen(viewModel)
-
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        getLastLocation()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        handler.removeCallbacksAndMessages(null)
     }
 
     override fun onRequestPermissionsResult(

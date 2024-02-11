@@ -1,6 +1,5 @@
 package com.example.temperature.viewModel
 
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.temperature.models.WeatherData
@@ -27,8 +26,14 @@ class MainViewModel constructor(private val repository: MainRepository) : ViewMo
         request.enqueue(object : Callback<WeatherResponse>{
 
             override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-                networkState.postValue("success")
-                weatherData.postValue(WeatherData().setData(response.body()!!))
+                val weatherDataObject = WeatherData(response.body()!!)
+                if (!weatherDataObject.hasNullAttributes()){
+                    networkState.postValue("success")
+                    weatherData.postValue(weatherDataObject)
+                } else{
+                    getWeatherData(city)
+                }
+
             }
 
             override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
