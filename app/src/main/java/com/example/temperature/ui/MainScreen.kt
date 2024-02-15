@@ -1,15 +1,17 @@
 package com.example.temperature.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -32,35 +34,40 @@ import com.example.temperature.models.WeatherCard
 import com.example.temperature.viewModel.MainViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import coil.compose.AsyncImage
 import com.example.temperature.R
+import com.example.temperature.models.MainScreenVariableSizes
 import com.example.temperature.models.WeatherData
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
+
 @Composable
-fun WeatherCard(weatherCard: WeatherCard) {
+fun WeatherCard(weatherCard: WeatherCard, screenVariableSizes: MainScreenVariableSizes) {
     Card (modifier = Modifier
-        .width(120.dp)
-        .height(120.dp)
+        .fillMaxWidth()
+        .height(screenVariableSizes.cardSize)
         .padding(10.dp),colors = CardDefaults.cardColors(containerColor = Color(android.graphics.Color.parseColor("#3CF1EBF1"))),
         shape = RoundedCornerShape(0.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
             Image(painter = painterResource(id = weatherCard.image), contentDescription = null, modifier = Modifier
-                .size(25.dp),colorFilter = ColorFilter.tint(Color.White)
+                .size(screenVariableSizes.cardImageSize),colorFilter = ColorFilter.tint(Color.White)
             )
-            Text(text = weatherCard.name, color = Color.White, fontSize = 14.sp)
-            weatherCard.data?.let { Text(text = it, color = Color.White, fontSize = 14.sp) }
+            Text(text = weatherCard.name, color = Color.White, fontSize = screenVariableSizes.cardTextSize)
+            weatherCard.data?.let { Text(text = it, color = Color.White, fontSize = screenVariableSizes.cardTextSize) }
         }
 
     }
 
 }
-
 
 fun weatherCardItems(weatherData: WeatherData?): List<WeatherCard> {
     val dateFormat = SimpleDateFormat("hh:mm a", Locale.ENGLISH)
@@ -136,6 +143,31 @@ fun getConditionImageUrl(weatherCondition: String?): String {
 
 }
 
+@Composable
+fun WeatherImage(size: Dp, imageUrl: String?){
+    AsyncImage(
+        model = getConditionImageUrl(imageUrl),
+        contentDescription = null,
+        modifier = Modifier
+            .size(size)
+    )
+}
+
+@Composable
+fun TemperatureText(size: TextUnit,temperature: String){
+    Text(
+        text = "$temperature°C",
+        color = Color.White,
+        fontSize = size
+    )
+}
+
+@Composable
+fun WeatherConditionText(description: String){
+    Text(text = description.replaceFirstChar { it.uppercase() },
+        color = Color.White,
+        fontSize = 25.sp)
+}
 
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
@@ -143,6 +175,14 @@ fun MainScreen(viewModel: MainViewModel) {
     val networkState by viewModel.networkState.observeAsState()
     val cityName by viewModel.cityName.observeAsState()
     val estateName by viewModel.estateName.observeAsState()
+    val mainScreenVariableSizes: MainScreenVariableSizes
+
+    val configuration = LocalConfiguration.current
+    mainScreenVariableSizes = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE){
+        MainScreenVariableSizes(70.dp,20.dp,10.sp,30.sp,100.dp)
+    } else{
+        MainScreenVariableSizes(130.dp,40.dp,14.sp,90.sp,150.dp)
+    }
 
     ConstraintLayout(
         modifier = Modifier
@@ -159,7 +199,17 @@ fun MainScreen(viewModel: MainViewModel) {
             )
             .padding(20.dp),
     ) {
-        val (location, weatherImage, centerColumn, bottomGrid, progressiveBar) = createRefs()
+        val (location, centerInfo, bottomGrid, progressiveBar, errorMessage) = createRefs()
+
+        fun centerConstraint(constrainName: ConstrainedLayoutReference): Modifier {
+            return Modifier
+                .constrainAs(constrainName) {
+                    top.linkTo(parent.top)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                }
+        }
 
         when (networkState) {
             "success" -> {
@@ -173,38 +223,49 @@ fun MainScreen(viewModel: MainViewModel) {
                             end.linkTo(parent.end)
                         })
 
-                AsyncImage(
-                    model = getConditionImageUrl(weatherData?.description),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .constrainAs(weatherImage) {
-                            bottom.linkTo(centerColumn.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            top.linkTo(location.bottom)
+
+                if(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE){
+                    Row(
+                        modifier = Modifier
+                            .constrainAs(centerInfo) {
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                bottom.linkTo(bottomGrid.top)
+                                top.linkTo(location.bottom)
+
+                            },verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.description)
+
+                        Column(
+                        ) {
+
+                            WeatherConditionText(weatherData?.description!!)
+                            TemperatureText(mainScreenVariableSizes.temperatureTextSize,
+                                weatherData?.temperature!!)
                         }
-                        .size(280.dp)
-                )
+                    }
+                } else{
+                    Column(
+                        modifier = Modifier
+                            .constrainAs(centerInfo) {
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                top.linkTo(location.bottom)
+                                bottom.linkTo(bottomGrid.top)
 
-                Column(
-                    modifier = Modifier
-                        .constrainAs(centerColumn) {
-                            top.linkTo(parent.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            bottom.linkTo(parent.bottom)
+                            }, horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
 
-                        }, horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.description)
 
-                    Text(text = weatherData?.description!!.replaceFirstChar { it.uppercase() },
-                        color = Color.White,
-                        fontSize = 25.sp)
-                    Text(
-                        text = weatherData?.temperature + "°C",
-                        color = Color.White,
-                        fontSize = 90.sp
-                    )
+                        WeatherConditionText(weatherData?.description!!)
+                        TemperatureText(mainScreenVariableSizes.temperatureTextSize,
+                            weatherData?.temperature!!
+                        )
+
+                    }
 
                 }
 
@@ -217,7 +278,7 @@ fun MainScreen(viewModel: MainViewModel) {
                     }, contentPadding = PaddingValues(0.dp), columns = GridCells.Fixed(3)
                 ) {
                     itemsIndexed(weatherCardItems(weatherData)) { _, dataCardItem ->
-                        WeatherCard(dataCardItem)
+                        WeatherCard(dataCardItem, mainScreenVariableSizes)
                     }
 
                 }
@@ -227,26 +288,14 @@ fun MainScreen(viewModel: MainViewModel) {
             "error" -> {
                 Text(
                     text = "Erro de conexão!",
-                    modifier = Modifier.constrainAs(progressiveBar) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                        top.linkTo(parent.top)
-
-                    }, fontSize = 30.sp, color = Color.White
+                    modifier = centerConstraint(errorMessage), fontSize = 30.sp, color = Color.White
                 )
 
             }
 
             else -> {
                 CircularProgressIndicator(
-                    modifier = Modifier.constrainAs(progressiveBar) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                        top.linkTo(parent.top)
-
-                    }, color = Color.White
+                    modifier = centerConstraint(progressiveBar), color = Color.White
                 )
 
             }

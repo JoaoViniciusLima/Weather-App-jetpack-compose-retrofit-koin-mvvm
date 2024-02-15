@@ -6,26 +6,22 @@ import android.location.Geocoder
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import com.example.temperature.api.RetrofitService
-import com.example.temperature.repositores.MainRepository
 import com.example.temperature.ui.MainScreen
 import com.example.temperature.viewModel.MainViewModel
-import com.example.temperature.viewModel.MainViewModelFactory
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import java.util.Locale
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
     private val REQUEST_CODE_LOCATION_PERMISSION = 100
-    private lateinit var viewModel: MainViewModel
+    private val viewModel: MainViewModel by viewModel()
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private fun requestLocationPermission() {
@@ -38,7 +34,6 @@ class MainActivity : ComponentActivity() {
             REQUEST_CODE_LOCATION_PERMISSION
         )
     }
-
 
     private fun getLastLocation() {
 
@@ -95,14 +90,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val retrofitService = RetrofitService.getInstance()
-        viewModel = ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService))).get(
-            MainViewModel::class.java
-        )
-
         viewModel.cityName.observe(this, Observer { cityName ->
             startHandler(cityName)
-
         })
 
         setContent { MainScreen(viewModel)

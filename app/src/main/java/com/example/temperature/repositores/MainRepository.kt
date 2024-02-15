@@ -4,6 +4,6 @@ import com.example.temperature.api.RetrofitService
 
 class MainRepository constructor(private val retrofitService: RetrofitService ) {
 
-    fun getWeatherData(city: String ) = retrofitService.getWeatherData(city)
+    fun getWeatherData(city: String) = retrofitService.getWeatherData(city)
 
 }

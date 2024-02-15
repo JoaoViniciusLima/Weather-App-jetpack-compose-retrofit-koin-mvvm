@@ -80,5 +80,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0-beta01")
     implementation ("com.google.android.gms:play-services-location:18.0.0")
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.insert-koin:koin-android:3.2.2")
 
 }
