@@ -35,10 +35,8 @@ import com.example.temperature.viewModel.MainViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.constraintlayout.compose.ConstrainedLayoutReference
-import coil.compose.AsyncImage
 import com.example.temperature.R
 import com.example.temperature.models.MainScreenVariableSizes
 import com.example.temperature.models.WeatherData
@@ -108,7 +106,7 @@ fun weatherCardItems(weatherData: WeatherData?): List<WeatherCard> {
 }
 
 
-fun getConditionImageUrl(weatherId: Int): String {
+fun getConditionImageUrl(weatherId: Int): Int {
 
     val timeZone = TimeZone.getTimeZone("GMT-3")
 
@@ -116,52 +114,55 @@ fun getConditionImageUrl(weatherId: Int): String {
 
     val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
 
-    val periodCodes = mapOf(
-        "night" to "n",
-        "day" to "d"
-    )
     val periodCode = if (hourOfDay >= 18 || hourOfDay < 6) {
-        periodCodes["night"]
+        "night"
     } else {
-        periodCodes["day"]
+        "day"
     }
 
-    val weatherConditionsCodes = mapOf(
-        200..232 to "11",
-        300..321 to "09",
-        520..531 to "09",
-        500..504 to "10",
-        600..622 to "13",
-        511 to "13",
-        701..781 to "50",
-        800 to "01",
-        801 to "02",
-        802 to "03",
-        803 to "04",
-        804 to "04",
-
+    val weatherConditionsImages = mapOf(
+        "thunderstorm_day" to R.drawable.thunderstorm,
+        "thunderstorm_night" to R.drawable.thunderstorm,
+        "rain_day" to R.drawable.rain,
+        "rain_night" to R.drawable.rain,
+        "snow_day" to R.drawable.snow,
+        "snow_night" to R.drawable.snow,
+        "clear_sky_day" to R.drawable.sun,
+        "clear_sky_night" to R.drawable.moon,
+        "few_clouds_day" to R.drawable.cloudy_day,
+        "few_clouds_night" to R.drawable.cloudy_night,
+        "cloud_day" to R.drawable.cloud,
+        "cloud_night" to R.drawable.cloud
     )
 
-    val weatherConditionCode = weatherConditionsCodes[weatherId] ?:
-    weatherConditionsCodes.entries.firstOrNull { (range, _) ->
+    val weatherConditions = mapOf(
+        200..232 to "thunderstorm",
+        300..321 to "rain",
+        500..531 to "rain",
+        600..622 to "snow",
+        511 to "snow",
+        800 to "clear_sky",
+        801 to "few_clouds",
+        802..804 to "cloud",
+    )
+
+    val weatherCondition = weatherConditions[weatherId] ?:
+    weatherConditions.entries.firstOrNull { (range, _) ->
         when (range) {
             is IntRange -> weatherId in range
             else -> false
         }
     }?.value
 
-    return "https://openweathermap.org/img/wn/$weatherConditionCode$periodCode@2x.png"
-
+    return weatherConditionsImages[weatherCondition + "_$periodCode"]!!
 }
 
 @Composable
-fun WeatherImage(size: Dp, weatherId: Int?){
-    AsyncImage(
-        model = getConditionImageUrl(weatherId!!),
-        contentDescription = null,
-        modifier = Modifier
-            .size(size)
+fun WeatherImage(modifier: Modifier, weatherId: Int?){
+    Image(painter = painterResource(id = getConditionImageUrl(weatherId!!)), contentDescription = null, modifier = modifier
+
     )
+
 }
 
 @Composable
@@ -192,7 +193,7 @@ fun MainScreen(viewModel: MainViewModel) {
     mainScreenVariableSizes = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE){
         MainScreenVariableSizes(70.dp,20.dp,10.sp,30.sp,100.dp)
     } else{
-        MainScreenVariableSizes(130.dp,40.dp,14.sp,90.sp,150.dp)
+        MainScreenVariableSizes(130.dp,40.dp,14.sp,90.sp,280.dp)
     }
 
     ConstraintLayout(
@@ -210,7 +211,7 @@ fun MainScreen(viewModel: MainViewModel) {
             )
             .padding(20.dp),
     ) {
-        val (location, centerInfo, bottomGrid, progressiveBar, errorMessage) = createRefs()
+        val (location, weatherImage, centerInfo, bottomGrid, progressiveBar, errorMessage) = createRefs()
 
         fun centerConstraint(constrainName: ConstrainedLayoutReference): Modifier {
             return Modifier
@@ -234,7 +235,6 @@ fun MainScreen(viewModel: MainViewModel) {
                             end.linkTo(parent.end)
                         })
 
-
                 if(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE){
                     Row(
                         modifier = Modifier
@@ -246,8 +246,7 @@ fun MainScreen(viewModel: MainViewModel) {
 
                             },verticalAlignment = Alignment.CenterVertically
                     ) {
-
-                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.weatherId)
+                        WeatherImage(Modifier.size(mainScreenVariableSizes.weatherImageSize),weatherData?.weatherId)
 
                         Column(
                         ) {
@@ -258,18 +257,25 @@ fun MainScreen(viewModel: MainViewModel) {
                         }
                     }
                 } else{
+
+                    WeatherImage(Modifier.constrainAs(weatherImage) {
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        top.linkTo(location.bottom)
+                        bottom.linkTo(centerInfo.top)
+
+                    }.size(mainScreenVariableSizes.weatherImageSize),weatherData?.weatherId)
+
                     Column(
                         modifier = Modifier
                             .constrainAs(centerInfo) {
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                                top.linkTo(location.bottom)
+                                top.linkTo(location.bottom, 240.dp)
                                 bottom.linkTo(bottomGrid.top)
 
                             }, horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-
-                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.weatherId)
 
                         WeatherConditionText(weatherData?.description!!)
                         TemperatureText(mainScreenVariableSizes.temperatureTextSize,
