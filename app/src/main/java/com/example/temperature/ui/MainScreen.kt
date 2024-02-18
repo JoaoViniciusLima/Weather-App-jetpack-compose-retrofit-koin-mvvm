@@ -143,13 +143,17 @@ fun getConditionImageUrl(weatherId: Int): String {
 
     )
 
-    val weatherConditionCode = weatherConditionsCodes.entries.firstOrNull { (range, _) ->
+    val weatherConditionCode = weatherConditionsCodes[weatherId] ?:
+    weatherConditionsCodes.entries.firstOrNull { (range, _) ->
         when (range) {
             is IntRange -> weatherId in range
             else -> false
         }
     }?.value
 
+
+
+    Log.d("aaaaa", weatherConditionCode.toString())
     return "https://openweathermap.org/img/wn/$weatherConditionCode$periodCode@2x.png"
 
 }
