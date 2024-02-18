@@ -1,7 +1,6 @@
 package com.example.temperature.ui
 
 import android.content.res.Configuration
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -151,9 +150,6 @@ fun getConditionImageUrl(weatherId: Int): String {
         }
     }?.value
 
-
-
-    Log.d("aaaaa", weatherConditionCode.toString())
     return "https://openweathermap.org/img/wn/$weatherConditionCode$periodCode@2x.png"
 
 }
