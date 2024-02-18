@@ -12,7 +12,8 @@ data class WeatherData(
     var humidity: String? = null,
     var pressure: String? = null,
     var wind: String? = null,
-    var description: String? = null
+    var description: String? = null,
+    var weatherId: Int? = null
 
 ){
     fun hasNullAttributes(): Boolean {
@@ -22,7 +23,8 @@ data class WeatherData(
                 humidity == null ||
                 pressure == null ||
                 wind == null ||
-                description == null
+                description == null ||
+                weatherId == null
     }
 
     constructor(weatherResponse: WeatherResponse) :
@@ -47,7 +49,13 @@ data class WeatherData(
                 },
                 weatherResponse.weather[0].description?.let{
                     weatherResponse.weather[0].description
-                })
+                },
+                weatherResponse.weather[0].id?.let{
+                    weatherResponse.weather[0].id
+                }
+            )
+
+
 
 }
 

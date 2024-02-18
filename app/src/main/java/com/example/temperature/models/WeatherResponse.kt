@@ -8,7 +8,8 @@ data class WeatherResponse (
 )
 
 data class Weather(
-    val description: String
+    val description: String,
+    val id: Int
 )
 
 data class Main(

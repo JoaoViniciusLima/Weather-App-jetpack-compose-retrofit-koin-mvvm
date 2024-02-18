@@ -1,6 +1,7 @@
 package com.example.temperature.ui
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -108,7 +109,7 @@ fun weatherCardItems(weatherData: WeatherData?): List<WeatherCard> {
 }
 
 
-fun getConditionImageUrl(weatherCondition: String?): String {
+fun getConditionImageUrl(weatherId: Int): String {
 
     val timeZone = TimeZone.getTimeZone("GMT-3")
 
@@ -127,26 +128,36 @@ fun getConditionImageUrl(weatherCondition: String?): String {
     }
 
     val weatherConditionsCodes = mapOf(
-        "céu limpo" to "01",
-        "algumas nuvens" to "02",
-        "nuvens dispersas" to "03",
-        "nublado" to "04",
-        "chuva leve" to "09",
-        "chuva" to "10",
-        "trovoada" to "11",
-        "neve" to "13",
-        "misto" to "50"
+        200..232 to "11",
+        300..321 to "09",
+        520..531 to "09",
+        500..504 to "10",
+        600..622 to "13",
+        511 to "13",
+        701..781 to "50",
+        800 to "01",
+        801 to "02",
+        802 to "03",
+        803 to "04",
+        804 to "04",
+
     )
-    val weatherConditionCode = weatherConditionsCodes[weatherCondition]
+
+    val weatherConditionCode = weatherConditionsCodes.entries.firstOrNull { (range, _) ->
+        when (range) {
+            is IntRange -> weatherId in range
+            else -> false
+        }
+    }?.value
 
     return "https://openweathermap.org/img/wn/$weatherConditionCode$periodCode@2x.png"
 
 }
 
 @Composable
-fun WeatherImage(size: Dp, imageUrl: String?){
+fun WeatherImage(size: Dp, weatherId: Int?){
     AsyncImage(
-        model = getConditionImageUrl(imageUrl),
+        model = getConditionImageUrl(weatherId!!),
         contentDescription = null,
         modifier = Modifier
             .size(size)
@@ -236,7 +247,7 @@ fun MainScreen(viewModel: MainViewModel) {
                             },verticalAlignment = Alignment.CenterVertically
                     ) {
 
-                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.description)
+                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.weatherId)
 
                         Column(
                         ) {
@@ -258,7 +269,7 @@ fun MainScreen(viewModel: MainViewModel) {
                             }, horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
-                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.description)
+                        WeatherImage(mainScreenVariableSizes.weatherImageSize,weatherData?.weatherId)
 
                         WeatherConditionText(weatherData?.description!!)
                         TemperatureText(mainScreenVariableSizes.temperatureTextSize,
