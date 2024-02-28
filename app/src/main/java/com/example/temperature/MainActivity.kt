@@ -6,6 +6,7 @@ import android.location.Geocoder
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
     private val REQUEST_CODE_LOCATION_PERMISSION = 100
     private val viewModel: MainViewModel by viewModel()
     private val handler = Handler(Looper.getMainLooper())
+    private var isHandlerStopped = false
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private fun requestLocationPermission() {
         ActivityCompat.requestPermissions(
@@ -94,18 +96,24 @@ class MainActivity : ComponentActivity() {
             startHandler(cityName)
         })
 
+        getLastLocation()
+
         setContent { MainScreen(viewModel)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        getLastLocation()
+        if(isHandlerStopped){
+            viewModel.cityName.value?.let { viewModel.getWeatherData(it) }
+        }
+
     }
 
     override fun onStop() {
         super.onStop()
         handler.removeCallbacksAndMessages(null)
+        isHandlerStopped = true
     }
 
     override fun onRequestPermissionsResult(
@@ -120,9 +128,11 @@ class MainActivity : ComponentActivity() {
             } else {
                 Toast.makeText(
                     this,
-                    "Permissão de localização necessária",
+                    "Permição de localização necessaria",
                     Toast.LENGTH_SHORT
                 ).show()
+                getLastLocation()
+
             }
         }
 }
