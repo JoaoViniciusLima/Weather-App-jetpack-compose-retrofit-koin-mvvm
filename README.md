@@ -16,7 +16,7 @@ O aplicativo solicita a localização do usuário, caso seja concedida, faz uma 
 - Interrupção de task quando o aplicativo esta em segundo plano
 - Uso da localização do dispositivo para exibir informações com base na localização do usuário
 - Atualização automatica dos dados
-- Async image que muda dependendo da condição climatica e periodo do dia
+- Imagem que muda dependendo da condição climatica e periodo do dia
 
 ## Arquitetura
 Foi utilizado padrão de arquitetura MVVM com LiveData 
@@ -25,8 +25,8 @@ Foi utilizado padrão de arquitetura MVVM com LiveData
 O aplicativo utiliza a api do OpenWeather
 
 ## Screenshots
-<img src="https://github.com/JoaoViniciusLima/WeatherApp/assets/87715417/72c7c8fe-1850-4cc2-90be-4aa9a9f4d8be" alt="portrait" width="350"/>
-<img src="https://github.com/JoaoViniciusLima/WeatherApp/assets/87715417/c0a95b56-d58e-491e-af99-3a231579db6e" alt="landscape" width="700" />
+<img src="https://github.com/JoaoViniciusLima/Weather-App-jetpack-compose-retrofit-koin-mvvm/assets/87715417/8c25e835-49cf-4d4c-85b2-5916dcb3d4c8" alt="portrait" width="350"/>
+<img src="https://github.com/JoaoViniciusLima/Weather-App-jetpack-compose-retrofit-koin-mvvm/assets/87715417/8b382dc5-805c-44b3-abbf-b0c03da8c078" alt="landscape" width="700" />
 
 
 
